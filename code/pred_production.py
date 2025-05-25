@@ -13,6 +13,8 @@ from tensorflow.keras.layers import LSTM, Dense
 from sklearn.ensemble import RandomForestRegressor
 from xgboost import XGBRegressor
 import matplotlib.pyplot as plt
+import joblib
+
 
 
 
@@ -245,3 +247,14 @@ if __name__ == "__main__":
     results_df = compare_models(results)
     print("\nFinal Model Comparison:")
     print(results_df.round(2))
+
+    # Explicitly define features list to save with model
+    features = ['AMBIENT_TEMPERATURE', 'MODULE_TEMPERATURE', 'IRRADIATION', 'HOUR', 'DAY_OF_YEAR', 'IS_WEEKEND']
+
+    model_bundle = {
+        "model": xgb_model,
+        "scaler": scaler,
+        "features": features  # this is already defined earlier
+    }
+    joblib.dump(model_bundle, "model_production.pkl")
+
