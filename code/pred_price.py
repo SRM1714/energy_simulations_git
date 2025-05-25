@@ -158,7 +158,7 @@ if __name__ == "__main__":
 
     # Print results
     results_df = compare_models(list(results.values()))
-    print("\n📊 Model Comparison:")
+    print("\nModel Comparison:")
     print(results_df.round(2))
 
     # Plot one or more models

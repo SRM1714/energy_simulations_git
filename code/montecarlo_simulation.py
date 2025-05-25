@@ -40,7 +40,6 @@ def monte_carlo_simulation(n_simulations=100):
         prod_features = prod_bundle["features"]
 
         # Create synthetic weather matching the needed features
-        # You'll have to approximate MODULE_TEMPERATURE, IS_WEEKEND, DAY_OF_YEAR
         weather["AMBIENT_TEMPERATURE"] = weather["Temp"]
         weather["MODULE_TEMPERATURE"] = weather["Temp"] + np.random.normal(5, 1, size=len(weather))
         weather["IRRADIATION"] = weather["GHI"]
@@ -94,9 +93,14 @@ def monte_carlo_simulation(n_simulations=100):
 
 def plot_montecarlo_results(profit_direct_all, profit_battery_all, profit_optimized_all):
     plt.figure(figsize=(10,6))
-    plt.hist(profit_direct_all, bins=20, alpha=0.6, label="Direct sale")
-    plt.hist(profit_battery_all, bins=20, alpha=0.6, label="Rule-based battery")
-    plt.hist(profit_optimized_all, bins=20, alpha=0.6, label="MCMC optimized")
+    # plt.hist(profit_direct_all, bins=20, alpha=0.6, label="Direct sale")
+    # plt.hist(profit_battery_all, bins=20, alpha=0.6, label="Rule-based battery")
+    # plt.hist(profit_optimized_all, bins=20, alpha=0.6, label="MCMC optimized")
+    plt.hist(profit_direct_all, bins=20, alpha=0.4, label="Direct sale", color="blue", edgecolor="black")
+    plt.hist(profit_battery_all, bins=20, alpha=0.5, label="Rule-based battery", color="orange", edgecolor="black")
+    plt.hist(profit_optimized_all, bins=20, alpha=0.5, label="MCMC optimized", color="green", edgecolor="black")
+
+
     plt.xlabel("Cumulative Profit (€)")
     plt.ylabel("Frequency")
     plt.title("Monte Carlo Simulation of Battery Strategy")
@@ -106,5 +110,5 @@ def plot_montecarlo_results(profit_direct_all, profit_battery_all, profit_optimi
 
 
 if __name__ == "__main__":
-    profit_direct_all, profit_battery_all, profit_optimized_all = monte_carlo_simulation(n_simulations=2)
+    profit_direct_all, profit_battery_all, profit_optimized_all = monte_carlo_simulation(n_simulations=20)
     plot_montecarlo_results(profit_direct_all, profit_battery_all, profit_optimized_all)
