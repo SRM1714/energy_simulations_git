@@ -92,23 +92,31 @@ def monte_carlo_simulation(n_simulations=100):
 
 
 def plot_montecarlo_results(profit_direct_all, profit_battery_all, profit_optimized_all):
-    plt.figure(figsize=(10,6))
-    # plt.hist(profit_direct_all, bins=20, alpha=0.6, label="Direct sale")
-    # plt.hist(profit_battery_all, bins=20, alpha=0.6, label="Rule-based battery")
-    # plt.hist(profit_optimized_all, bins=20, alpha=0.6, label="MCMC optimized")
-    plt.hist(profit_direct_all, bins=20, alpha=0.4, label="Direct sale", color="blue", edgecolor="black")
-    plt.hist(profit_battery_all, bins=20, alpha=0.5, label="Rule-based battery", color="orange", edgecolor="black")
-    plt.hist(profit_optimized_all, bins=20, alpha=0.5, label="MCMC optimized", color="green", edgecolor="black")
-
-
+    plt.figure(figsize=(8, 5))
+    plt.hist(profit_direct_all, bins=30, color="skyblue", edgecolor="black")
+    plt.title("Profit Distribution: Direct Sale")
     plt.xlabel("Cumulative Profit (€)")
     plt.ylabel("Frequency")
-    plt.title("Monte Carlo Simulation of Battery Strategy")
-    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    plt.figure(figsize=(8, 5))
+    plt.hist(profit_battery_all, bins=30, color="orange", edgecolor="black")
+    plt.title("Profit Distribution: Rule-Based Battery")
+    plt.xlabel("Cumulative Profit (€)")
+    plt.ylabel("Frequency")
+    plt.tight_layout()
+    plt.show()
+
+    plt.figure(figsize=(8, 5))
+    plt.hist(profit_optimized_all, bins=30, color="green", edgecolor="black")
+    plt.title("Profit Distribution: MCMC-Optimized Battery")
+    plt.xlabel("Cumulative Profit (€)")
+    plt.ylabel("Frequency")
     plt.tight_layout()
     plt.show()
 
 
 if __name__ == "__main__":
-    profit_direct_all, profit_battery_all, profit_optimized_all = monte_carlo_simulation(n_simulations=20)
+    profit_direct_all, profit_battery_all, profit_optimized_all = monte_carlo_simulation(n_simulations=100)
     plot_montecarlo_results(profit_direct_all, profit_battery_all, profit_optimized_all)
