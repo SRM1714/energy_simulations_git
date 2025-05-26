@@ -6,6 +6,38 @@ from xgboost import XGBRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 import joblib
+from scipy.stats import skew, kurtosis
+
+def analyze_residuals(y_true, y_pred, model_name="Model"):
+    residuals = y_true - y_pred
+
+    print(f"\nResidual Statistics for {model_name}:")
+    print(f"Mean Residual:      {residuals.mean():.4f}")
+    print(f"Std Deviation:      {residuals.std():.4f}")
+    print(f"Skewness:           {skew(residuals):.4f}")
+    print(f"Kurtosis:           {kurtosis(residuals):.4f}")
+    print(f"Max Residual:       {residuals.max():.4f}")
+    print(f"Min Residual:       {residuals.min():.4f}")
+
+    # Histogram of residuals
+    plt.figure(figsize=(10, 4))
+    plt.hist(residuals, bins=30, color='lightblue', edgecolor='black')
+    plt.title(f"{model_name} - Residual Histogram")
+    plt.xlabel("Residual")
+    plt.ylabel("Frequency")
+    plt.tight_layout()
+    plt.show()
+
+    # Residuals vs Predicted
+    plt.figure(figsize=(10, 4))
+    plt.scatter(y_pred, residuals, alpha=0.5, color='darkgreen')
+    plt.axhline(0, color='red', linestyle='--')
+    plt.title(f"{model_name} - Residuals vs Predicted")
+    plt.xlabel("Predicted")
+    plt.ylabel("Residual")
+    plt.tight_layout()
+    plt.show()
+
 
 
 
@@ -78,7 +110,7 @@ def train_xgboost(X_train, y_train):
     X_train = X_train.apply(pd.to_numeric, errors='coerce').dropna()
     y_train = y_train.loc[X_train.index]
 
-    model = XGBRegressor(n_estimators=100, learning_rate=0.1, max_depth=4,
+    model = XGBRegressor(n_estimators=1000, learning_rate=0.01, max_depth=7,
                          objective='reg:squarederror', random_state=42)
     model.fit(X_train, y_train)
     return model
@@ -165,6 +197,16 @@ if __name__ == "__main__":
     plot_predictions(y_test, y_rf_pred, model_name="Random Forest", samples=200)
     plot_predictions(y_test, y_gb_pred, model_name="Gradient Boosting", samples=200)
     plot_predictions(y_test, y_xgb_pred, model_name="XGBoost", samples=200)
+
+    # After Random Forest
+    analyze_residuals(y_test, y_rf_pred, model_name="Random Forest")
+
+    # After Gradient Boosting
+    analyze_residuals(y_test, y_gb_pred, model_name="Gradient Boosting")
+
+    # After XGBoost (use clean test labels)
+    analyze_residuals(y_test_clean, y_xgb_pred, model_name="XGBoost")
+
 
     joblib.dump(xgb_model, "model_price.pkl")
 

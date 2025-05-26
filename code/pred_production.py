@@ -14,11 +14,55 @@ from sklearn.ensemble import RandomForestRegressor
 from xgboost import XGBRegressor
 import matplotlib.pyplot as plt
 import joblib
+from scipy.stats import skew, kurtosis
+
+def plot_residual_analysis(y_true, y_pred, timestamps=None, model_name="Model"):
+    residuals = y_true - y_pred
+
+    # Stats
+    print(f"\nResidual Statistics for {model_name}:")
+    print(f"Mean Residual:      {residuals.mean():.4f}")
+    print(f"Std Deviation:      {residuals.std():.4f}")
+    print(f"Skewness:           {skew(residuals):.4f}")
+    print(f"Kurtosis:           {kurtosis(residuals):.4f}")
+    print(f"Max Residual:       {residuals.max():.4f}")
+    print(f"Min Residual:       {residuals.min():.4f}")
+
+    # Plot 1: Histogram
+    plt.figure(figsize=(10, 4))
+    plt.hist(residuals, bins=300, color='orange', edgecolor='black')
+    plt.title(f"{model_name} - Residual Histogram")
+    plt.xlabel("Residuals")
+    plt.ylabel("Frequency")
+    plt.tight_layout()
+    plt.show()
+
+    # Plot 2: Residuals vs Predicted
+    plt.figure(figsize=(10, 4))
+    plt.scatter(y_pred, residuals, alpha=0.4)
+    plt.axhline(0, color='red', linestyle='--')
+    plt.title(f"{model_name} - Residuals vs Predicted")
+    plt.xlabel("Predicted AC Power")
+    plt.ylabel("Residuals")
+    plt.tight_layout()
+    plt.show()
+
+    # Plot 3: Residuals vs Time (optional)
+    if timestamps is not None:
+        plt.figure(figsize=(12, 4))
+        plt.plot(timestamps[-len(residuals):], residuals, label='Residuals', color='purple')
+        plt.axhline(0, color='red', linestyle='--')
+        plt.title(f"{model_name} - Residuals Over Time")
+        plt.xlabel("Time")
+        plt.ylabel("Residuals")
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.show()
 
 
 
 
-def prepare_data(weather_path, generation_path, test_size=0.15):
+def prepare_data(weather_path, generation_path, total_area, test_size=0.15):
     # Load data
     weather_df = pd.read_csv(weather_path)
     generation_df = pd.read_csv(generation_path)
@@ -38,10 +82,13 @@ def prepare_data(weather_path, generation_path, test_size=0.15):
     # Drop NaNs
     merged_df = merged_df.dropna()
 
+    # Normalize AC power by area (to W/m²)
+    merged_df['AC_POWER_PER_M2'] = merged_df['AC_POWER'] / total_area
+
     # Features and target
     features = ['AMBIENT_TEMPERATURE', 'MODULE_TEMPERATURE', 'IRRADIATION', 'HOUR', 'DAY_OF_YEAR', 'IS_WEEKEND']
     X = merged_df[features]
-    y = merged_df['AC_POWER']
+    y = merged_df['AC_POWER_PER_M2']  # use normalized target
 
     # Scale features
     scaler = MinMaxScaler()
@@ -51,6 +98,7 @@ def prepare_data(weather_path, generation_path, test_size=0.15):
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=test_size, random_state=42, shuffle=False)
 
     return X_train, X_test, y_train, y_test, scaler, merged_df
+
 
 
 
@@ -75,7 +123,7 @@ def train_ann(X_train, y_train, input_dim):
 
     model.compile(optimizer='adam', loss='mse', metrics=['mae'])
 
-    # Optional: Early stopping to avoid overfitting
+    # Early stopping to avoid overfitting
     es = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
 
     model.fit(X_train, y_train,
@@ -83,7 +131,7 @@ def train_ann(X_train, y_train, input_dim):
               epochs=50,
               batch_size=32,
               callbacks=[es],
-              verbose=0)  # Set verbose=1 if you want to see progress
+              verbose=1)
 
     return model
 
@@ -127,23 +175,30 @@ def mape(y_true, y_pred):
     return np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100
 
 
-def evaluate_model(model, X_train, y_train, X_test, y_test, name="Model", is_lstm=False):
+def evaluate_model(model, X_train, y_train, X_test, y_test, name="Model", total_area=1.0, is_lstm=False):
     y_train_pred = model.predict(X_train).flatten()
     y_test_pred = model.predict(X_test).flatten()
 
+    # Convert back to absolute power
+    y_train_pred_actual = y_train_pred * total_area
+    y_test_pred_actual = y_test_pred * total_area
+    y_train_actual = y_train * total_area
+    y_test_actual = y_test * total_area
+
     metrics = {
         "Model": name,
-        "Train MAE": mean_absolute_error(y_train, y_train_pred),
-        "Test MAE": mean_absolute_error(y_test, y_test_pred),
-        "Train RMSE": np.sqrt(mean_squared_error(y_train, y_train_pred)),
-        "Test RMSE": np.sqrt(mean_squared_error(y_test, y_test_pred)),
-        "Train MAPE": mape(y_train, y_train_pred),
-        "Test MAPE": mape(y_test, y_test_pred),
-        "Train R2": r2_score(y_train, y_train_pred),
-        "Test R2": r2_score(y_test, y_test_pred),
+        "Train MAE": mean_absolute_error(y_train_actual, y_train_pred_actual),
+        "Test MAE": mean_absolute_error(y_test_actual, y_test_pred_actual),
+        "Train RMSE": np.sqrt(mean_squared_error(y_train_actual, y_train_pred_actual)),
+        "Test RMSE": np.sqrt(mean_squared_error(y_test_actual, y_test_pred_actual)),
+        "Train MAPE": mape(y_train_actual, y_train_pred_actual),
+        "Test MAPE": mape(y_test_actual, y_test_pred_actual),
+        "Train R2": r2_score(y_train_actual, y_train_pred_actual),
+        "Test R2": r2_score(y_test_actual, y_test_pred_actual),
     }
 
-    return metrics, y_test_pred
+    return metrics, y_test_pred_actual  # return re-scaled predictions
+
 
 
 
@@ -189,8 +244,12 @@ if __name__ == "__main__":
     #weather_df = pd.read_csv('/home/guillermo/Documentos/ahpc/energy/data/Plant_2_Weather_Sensor_Data.csv')
     #generation_df = pd.read_csv('/home/guillermo/Documentos/ahpc/energy/data/Plant_2_Generation_Data.csv')
 
-    X_train, X_test, y_train, y_test, scaler, merged_df = prepare_data(weather_path, generation_path)
+    total_area = 1000
+
+    X_train, X_test, y_train, y_test, scaler, merged_df = prepare_data(weather_path, generation_path, total_area)
     results = []
+    print(pd.DataFrame(X_train).head())
+    print(pd.DataFrame(y_train).head())
 
     # --- Random Forest ---
     rf_model = train_random_forest(X_train, y_train)
@@ -248,6 +307,14 @@ if __name__ == "__main__":
     print("\nFinal Model Comparison:")
     print(results_df.round(2))
 
+    plot_residual_analysis(
+        y_true=y_test.values, # total_area,  # denormalized
+        y_pred=y_xgb_pred,
+        timestamps=merged_df['DATE_TIME'].values[-len(y_test):],
+        model_name="XGBoost"
+    )
+
+
     # Explicitly define features list to save with model
     features = ['AMBIENT_TEMPERATURE', 'MODULE_TEMPERATURE', 'IRRADIATION', 'HOUR', 'DAY_OF_YEAR', 'IS_WEEKEND']
 
@@ -256,5 +323,5 @@ if __name__ == "__main__":
         "scaler": scaler,
         "features": features  # this is already defined earlier
     }
-    joblib.dump(model_bundle, "model_production.pkl")
+    joblib.dump(model_bundle, "/home/guillermo/Documentos/ahpc/energy_simulations_git/model_production.pkl")
 
