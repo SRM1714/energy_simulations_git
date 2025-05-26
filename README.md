@@ -1,7 +1,13 @@
 Energy Optimization and Decision Simulation Framework
 This repository presents a simulation framework designed to explore and optimize energy-related decision-making processes based on photovoltaic (PV) production, energy demand, battery storage, and market behavior under various scenarios.
 
-The project is motivated by the operational dynamics of the electricity markets in Spain, Italy, Germany, and Switzerland. For the accurate representation of these markets, several key academic and industry papers have been reviewed. You can find the links to those papers
+The project is motivated by the operational dynamics of the electricity markets in Spain, Italy, Germany, and Switzerland. For the accurate representation of these markets, several key academic and industry papers have been reviewed. You can find the links to those papers:
+https://www.aeaweb.org/articles?id=10.1257%2Fpandp.20211007
+https://ethz.ch/content/dam/ethz/special-interest/mavt/energy-science-center-dam/research/research-projects/AFEM/Workpackage_3_Abrell_2016_07.pdf
+https://nfabra.uc3m.es/wp-content/docs/CICE_79___2C8FE850E987F8791F634EE26F0862B9.pdf
+https://www.econstor.eu/bitstream/10419/123457/1/wp2014-04.pdf
+https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5218870
+https://www.bmwk.de/Redaktion/EN/Publikationen/whitepaper-electricity-market.pdf?__blob=publicationFile&v=6
 
 Repository Structure
 The repository is organized into several folders and scripts:
